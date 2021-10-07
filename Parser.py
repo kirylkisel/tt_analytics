@@ -26,7 +26,7 @@ def Parser(link='https://wincuptt.com/schedule/'):
                                'player_1_set', 'player_2_set', 'player_1_winner', 'player_2_winner',
                                'player_1_set_1_pts', 'player_2_set_1_pts', 'player_1_set_2_pts', 'player_2_set_2_pts',
                                'player_1_set_3_pts', 'player_2_set_3_pts', 'player_1_set_4_pts', 'player_2_set_4_pts',
-                               'player_1_set_5_pts', 'player_2_set_5_pts']
+                               'player_1_set_5_pts', 'player_2_set_5_pts'],index=None
                       )
     games = driver.find_elements_by_tag_name("li")
 
@@ -55,39 +55,50 @@ def Parser(link='https://wincuptt.com/schedule/'):
 
 
 def find_result(df):
-        result = re.match(r'.:.', df['result'][0])
-        result.group(0)
-        res = re.findall(r'\d+-\d+', df['result'][0])
-        return df
-def find_room(df):
-        for row in range(len(df)):
-            try:
-                df['room'][row] = int(df['room'][row][-1])
-            except IndexError:
-                df.drop([row])
-
-        for row in range(len(df)):
+    for row in range(len(df)):
+        if re.match(r'.:.', df['result'].loc[row])==None:
+            df['player_1_set'][row] = None
+            df['player_2_set'][row] = None
+        else:  
             total_result = re.match(r'.:.', df['result'].loc[row])[0]
             df['player_1_set'][row] = int(total_result[0])
             df['player_2_set'][row] = int(total_result[-1])
-        return df
+    return df
+  
+                
+
+                    
+                
+def find_room(df):
+    for row in range(len(df)):
+            try:
+                if type(df['room'][row])==str:
+                    df['room'][row] = int(df['room'][row][-1])
+                else: pass
+            except IndexError:
+                df.drop([row])
+    return df
+
 def clean_result(df):
     for row in range(len(df)):
-        if df['player_1_set'].loc[row] > df['player_2_set'].loc[row]:
-            df['player_1_winner'][row] = 1
-            df['player_2_winner'][row] = 0
-        else:
-            df['player_1_winner'][row] = 0
-            df['player_2_winner'][row] = 1
-    for row in range(len(df)):
-        set_results = re.findall(r'\d+-\d+', df['result'][row])
-        for set in range(5):
-            try:
-                df['player_1_set_' + str(set + 1) + '_pts'][row] = re.findall(r'\d+', set_results[set])[0]
-                df['player_2_set_' + str(set + 1) + '_pts'][row] = re.findall(r'\d+', set_results[set])[1]
-            except IndexError:
-                df['player_1_set_' + str(set + 1) + '_pts'][row] = 0
-                df['player_2_set_' + str(set + 1) + '_pts'][row] = 0
+        if df['player_1_set'].loc[row]!=None:
+        
+            if df['player_1_set'].loc[row] > df['player_2_set'].loc[row]:
+                df['player_1_winner'][row] = 1
+                df['player_2_winner'][row] = 0
+            else:
+                df['player_1_winner'][row] = 0
+                df['player_2_winner'][row] = 1
+    
+            set_results = re.findall(r'\d+-\d+', df['result'][row])
+            for set in range(5):
+                try:
+                    df['player_1_set_' + str(set + 1) + '_pts'][row] = re.findall(r'\d+', set_results[set])[0]
+                    df['player_2_set_' + str(set + 1) + '_pts'][row] = re.findall(r'\d+', set_results[set])[1]
+                except IndexError:
+                    df['player_1_set_' + str(set + 1) + '_pts'][row] = 0
+                    df['player_2_set_' + str(set + 1) + '_pts'][row] = 0
+        else:pass
     df=df.drop(['result'],axis=1)
     return df
 
